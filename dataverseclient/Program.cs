@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 namespace PowerApps.Samples
 {
    /// <summary>
-   /// Demonstrates Azure authentication and execution of a Dataverse Web API function.
+   /// Demonstrates Azure authentication and execution of a Dataverse WI've decided eb API function.
    /// </summary>
    class Program
    {
@@ -31,29 +31,35 @@ namespace PowerApps.Samples
             // See https://docs.microsoft.com/powerapps/developer/data-platform/walkthrough-register-app-azure-active-directory
 
             #region Authentication
-
-            // var authBuilder = PublicClientApplicationBuilder.Create(clientId)
-            //                .WithAuthority(AadAuthorityAudience.AzureAdMultipleOrgs)
+            AuthenticationResult authResult;
+            var authBuilder = PublicClientApplicationBuilder.Create(clientId)
+                            .WithAuthority(AadAuthorityAudience.AzureAdMultipleOrgs)
+                            .WithRedirectUri(redirectUri)
+                            .Build();
+            // var authBuilder = ConfidentialClientApplicationBuilder.Create(clientId)
+            //                .WithClientSecret(clientSecret)
             //                .WithRedirectUri(redirectUri)
             //                .Build();
-            var authBuilder = ConfidentialClientApplicationBuilder.Create(clientId)
-                           .WithClientSecret(clientSecret)
-                           .WithRedirectUri(redirectUri)
-                           .Build();
                               
 
             var scope = resource + "/.default";
             //var scope = "https://graph.microsoft.com/User.Read";
             string[] scopes = { scope };
 
-            // AuthenticationResult token =
-            //    await authBuilder.AcquireTokenInteractive(scopes).ExecuteAsync();
-            AuthenticationResult token =
-               await authBuilder.AcquireTokenForClient(scopes).ExecuteAsync();
+            try
+            {
+                var accounts = await authBuilder.GetAccountsAsync();
+                // Try to acquire an access token from the cache. If device code is required, Exception will be thrown.
+                authResult = await authBuilder.AcquireTokenSilent(scopes, accounts.FirstOrDefault()).ExecuteAsync();
+            }
+            catch (MsalUiRequiredException)
+            {
+               authResult = await authBuilder.AcquireTokenInteractive(scopes).ExecuteAsync();
+            }
+
             #endregion Authentication
 
             #region Client configuration
-
             var client = new HttpClient
             {
                // See https://docs.microsoft.com/powerapps/developer/data-platform/webapi/compose-http-requests-handle-errors#web-api-url-and-versions
@@ -64,7 +70,7 @@ namespace PowerApps.Samples
             // Default headers for each Web API call.
             // See https://docs.microsoft.com/powerapps/developer/data-platform/webapi/compose-http-requests-handle-errors#http-headers
             HttpRequestHeaders headers = client.DefaultRequestHeaders;
-            headers.Authorization = new AuthenticationHeaderValue("Bearer", token.AccessToken);
+            headers.Authorization = new AuthenticationHeaderValue("Bearer", authResult.AccessToken);
             //headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
             headers.Add("OData-MaxVersion", "4.0");
             headers.Add("OData-Version", "4.0");
