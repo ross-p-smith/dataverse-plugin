@@ -24,7 +24,6 @@ namespace PowerApps.Samples
 
             // Azure Active Directory app registration shared by all Power App samples.
             var clientId = EnvReader.GetStringValue("CLIENT_ID");
-            var clientSecret = EnvReader.GetStringValue("CLIENT_SECRET");
             var redirectUri = "http://localhost"; // Loopback for the interactive login.
 
             // For your custom apps, you will need to register them with Azure AD yourself.
@@ -36,11 +35,6 @@ namespace PowerApps.Samples
                             .WithAuthority(AadAuthorityAudience.AzureAdMultipleOrgs)
                             .WithRedirectUri(redirectUri)
                             .Build();
-            // var authBuilder = ConfidentialClientApplicationBuilder.Create(clientId)
-            //                .WithClientSecret(clientSecret)
-            //                .WithRedirectUri(redirectUri)
-            //                .Build();
-                              
 
             var scope = resource + "/.default";
             //var scope = "https://graph.microsoft.com/User.Read";
@@ -71,7 +65,6 @@ namespace PowerApps.Samples
             // See https://docs.microsoft.com/powerapps/developer/data-platform/webapi/compose-http-requests-handle-errors#http-headers
             HttpRequestHeaders headers = client.DefaultRequestHeaders;
             headers.Authorization = new AuthenticationHeaderValue("Bearer", authResult.AccessToken);
-            //headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
             headers.Add("OData-MaxVersion", "4.0");
             headers.Add("OData-Version", "4.0");
             headers.Accept.Add(
